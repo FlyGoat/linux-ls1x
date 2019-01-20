@@ -16,8 +16,6 @@ config LOONGSON1_LS1B
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select SYS_SUPPORTS_HIGHMEM
 	select SYS_SUPPORTS_MIPS16
-	select SYS_HAS_EARLY_PRINTK
-	select USE_GENERIC_EARLY_PRINTK_8250
 	select COMMON_CLK
 
 config LOONGSON1_LS1C
@@ -32,9 +30,44 @@ config LOONGSON1_LS1C
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select SYS_SUPPORTS_HIGHMEM
 	select SYS_SUPPORTS_MIPS16
+	select COMMON_CLK
+endchoice
+
+menuconfig LS1X_EARLY_PRINTK
+	bool "Earlyprintk Support"
+	default Y
 	select SYS_HAS_EARLY_PRINTK
 	select USE_GENERIC_EARLY_PRINTK_8250
-	select COMMON_CLK
+	depends on CPU_LOONGSON1
+	help
+	  This option enable eralypritk for ls1x.
+	  If unsure, say Y.
+
+choice
+	prompt  "Select Earlyprintk UART"
+	depends on LS1X_EARLY_PRINTK
+	default EARLY_USE_UART2
+
+config EARLY_USE_UART0
+	bool "Use UART0"
+	help
+	  Use UART0 as earlyprintk output.
+
+config EARLY_USE_UART1
+	bool "Use UART1"
+	help
+	  Use UART2 as earlyprintk output.
+
+config EARLY_USE_UART2
+	bool "Use UART2"
+	help
+	  Use UART2 as earlyprintk output.
+
+config EARLY_USE_UART3
+	bool "Use UART3"
+	help
+	  Use UART3 as earlyprintk output.
+
 endchoice
 
 menuconfig CEVT_CSRC_LS1X
