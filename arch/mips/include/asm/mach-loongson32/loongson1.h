@@ -48,6 +48,12 @@
 #define LS1X_AC97_BASE			0x1fe74000
 #define LS1X_NAND_BASE			0x1fe78000
 #define LS1X_CLK_BASE			0x1fe78030
+#define LS1X_SPI0_BASE			0x1fe80000
+
+#define SPI0_CS0			0
+#define SPI0_CS1			1
+#define SPI0_CS2			2
+#define SPI0_CS3			3
 
 #include <regs-clk.h>
 #include <regs-mux.h>
