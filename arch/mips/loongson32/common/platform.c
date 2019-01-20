@@ -313,3 +313,56 @@ struct platform_device ls1x_wdt_pdev = {
 	.num_resources	= ARRAY_SIZE(ls1x_wdt_resources),
 	.resource	= ls1x_wdt_resources,
 };
+
+/* SPI Flash */
+static struct resource ls1x_spi_resources[] = {
+	[0] = {
+		.start	= LS1X_SPI0_BASE,
+		.end	= LS1X_SPI0_BASE + SZ_16K - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+struct platform_device ls1x_spi_pdev = {
+	.name		= "ls1x-spi",
+	.id 		= 0,
+	.num_resources	= ARRAY_SIZE(ls1x_spi_resources),
+	.resource	= ls1x_spi_resources,
+	.dev = {
+		.platform_data = NULL,
+	},
+};
+
+void __init ls1x_spi_set_platdata(struct plat_ls1x_spi *pdata)
+{
+	ls1x_spi_pdev.dev.platform_data = pdata;
+}
+
+/* USB OHCI */
+static u64 ls1x_ohci_dmamask = DMA_BIT_MASK(32);
+
+static struct resource ls1x_ohci_resources[] = {
+	[0] = {
+		.start	= LS1X_OHCI_BASE,
+		.end	= LS1X_OHCI_BASE + SZ_32K - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= LS1X_OHCI_IRQ,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct usb_ehci_pdata ls1x_ohci_pdata = {
+};
+
+struct platform_device ls1x_ohci_pdev = {
+	.name		= "ohci-platform",
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(ls1x_ohci_resources),
+	.resource	= ls1x_ohci_resources,
+	.dev		= {
+		.dma_mask = &ls1x_ohci_dmamask,
+		.platform_data = &ls1x_ohci_pdata,
+	},
+};
