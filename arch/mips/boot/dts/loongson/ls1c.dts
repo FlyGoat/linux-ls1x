@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "openloongson,smatloongsonv3", "loongson,ls1c300b";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "loongson,gs232";
+			reg = <0>;
+		};
+	};
+
+	cpu_intc: interrupt-controller {
+		#address-cells = <0>;
+		compatible = "mti,cpu-interrupt-controller";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "simple-bus";
+		ranges;
+
+		memory@0 {
+			device_type = "memory";
+			reg = <0x00000000 0x10000000>;
+		};
+
+		intc: interrupt-controller@1fd01040 {
+			compatible = "loongson,ls1c-intc";
+			reg = <0x1fd01040 0x78>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <2>, <3>, <4>, <5>, <6>;
+		};
+
+	};
+};

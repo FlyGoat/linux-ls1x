@@ -280,6 +280,14 @@ config INGENIC_IRQ
 	depends on MACH_INGENIC
 	default y
 
+config LOONGSON1_IRQ
+	bool
+	tristate "Looongson-1 IRQ controller"
+	select GENERIC_IRQ_CHIP
+	select IRQ_DOMAIN
+	depends on MACH_LOONGSON32
+	default y
+
 config RENESAS_H8300H_INTC
         bool
 	select IRQ_DOMAIN
