@@ -1,0 +1,11 @@
+* Clock bindings for Loongson-1 MCUs
+
+Required properties:
+- compatible: Should be "loongson,ls1c-clock" or "loongson,ls1b-clock"
+- reg: Address and length of the register set
+- #clock-cells: Should be <1>
+- clocks: list of input clocks
+
+The clock consumer should specify the desired clock by having the clock
+ID in its "clocks" phandle cell. See include/dt-bindings/clock/ls1c-clock.h
+or include/dt-bindings/clock/ls1b-clock.h for the full list of clocks.
