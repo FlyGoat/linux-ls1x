@@ -11,6 +11,7 @@
 #include <linux/interrupt.h>
 #include <linux/sizes.h>
 #include <asm/time.h>
+#include <linux/clk-provider.h>
 
 #include <loongson1.h>
 #include <platform.h>
@@ -216,10 +217,24 @@ static void __init ls1x_time_init(void)
 
 void __init plat_time_init(void)
 {
+	struct device_node *np;
 	struct clk *clk = NULL;
 
 	/* initialize LS1X clocks */
-	ls1x_clk_init();
+	//ls1x_clk_init();
+	of_clk_init(NULL);
+
+	np = of_get_cpu_node(0, NULL);
+	if (!np) {
+		pr_err("Failed to get CPU node\n");
+		return;
+	}
+//	clk = clk_get(NULL, "cpu_clk");
+	clk = of_clk_get(np, 0);
+	if (IS_ERR(clk)) {
+		pr_err("Failed to get CPU clock: %ld\n", PTR_ERR(clk));
+		return;
+	}
 
 #ifdef CONFIG_CEVT_CSRC_LS1X
 	/* setup LS1X PWM timer */
@@ -231,9 +246,11 @@ void __init plat_time_init(void)
 	ls1x_time_init();
 #else
 	/* setup mips r4k timer */
-	clk = clk_get(NULL, "cpu_clk");
+	//clk = clk_get(NULL, "cpu_clk");
 	if (IS_ERR(clk))
 		panic("unable to get cpu clock, err=%ld", PTR_ERR(clk));
+	
+	pr_info("CPU Clock: %lu\n",clk_get_rate(clk));
 
 	mips_hpt_frequency = clk_get_rate(clk) / 2;
 #endif /* CONFIG_CEVT_CSRC_LS1X */

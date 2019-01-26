@@ -63,25 +63,25 @@ static const struct gpio_led_platform_data ls1x_led_pdata __initconst = {
 };
 
 static struct platform_device *ls1c_platform_devices[] __initdata = {
-	&ls1x_uart_pdev,
-	&ls1x_eth0_pdev,
-	&ls1x_ohci_pdev,
-	&ls1x_ehci_pdev,
+//	&ls1x_uart_pdev,
+//	&ls1x_eth0_pdev,
+//	&ls1x_ohci_pdev,
+//	&ls1x_ehci_pdev,
 	&ls1x_gpio0_pdev,
 	&ls1x_gpio1_pdev,
-	&ls1x_wdt_pdev,
-	&ls1x_spi_pdev,
+//	&ls1x_wdt_pdev,
+//	&ls1x_spi_pdev,
 };
 
 static int __init ls1c_platform_init(void)
 {
-	ls1x_serial_set_uartclk(&ls1x_uart_pdev);
+	//ls1x_serial_set_uartclk(&ls1x_uart_pdev);
 
 	ls1x_spi_set_platdata(&ls1x_spi_pdata);
 	spi_register_board_info(ls1x_spi_devices,
 				   ARRAY_SIZE(ls1x_spi_devices));
 
-	gpio_led_register_device(-1, &ls1x_led_pdata);
+//	gpio_led_register_device(-1, &ls1x_led_pdata);
 
 	return platform_add_devices(ls1c_platform_devices,
 				   ARRAY_SIZE(ls1c_platform_devices));

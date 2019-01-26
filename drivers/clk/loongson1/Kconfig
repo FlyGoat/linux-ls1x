@@ -1,0 +1,27 @@
+menu "Loongson-1 Clock drivers"
+	depends on MACH_LOONGSON32
+
+config LOONGSON1_CLOCK_COMMON
+	bool
+
+config LOONGSON1_CLOCK_LS1B
+	bool "Loongson 1B driver"
+	default y
+	select LOONGSON1_CLOCK_COMMON
+	help
+	  Support the clocks provided by the clock hardware on Loongson-1B
+	  and compatible SoCs.
+
+	  If building for a Loongson-1B SoC, you want to say Y here.
+
+config LOONGSON1_CLOCK_LS1C
+	bool "Loongson 1C driver"
+	default y
+	select LOONGSON1_CLOCK_COMMON
+	help
+	  Support the clocks provided by the clock hardware on Loongson-1C
+	  and compatible SoCs.
+
+	  If building for a Loongson-1C SoC, you want to say Y here.
+
+endmenu

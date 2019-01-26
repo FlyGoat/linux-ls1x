@@ -1,20 +1,49 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2016 Yang Ling <gnaygnil@gmail.com>
- *
- * This program is free software; you can redistribute  it and/or modify it
- * under  the terms of  the GNU General  Public License as published by the
- * Free Software Foundation;  either version 2 of the  License, or (at your
- * option) any later version.
+ * Copyright (c) 2012-2016 Zhang, Keguang <keguang.zhang@gmail.com>
+ * Copyright (c) 2019 Jiaxun Yang <jiaxun.yang@flygoat.com>
  */
 
 #include <linux/clkdev.h>
 #include <linux/clk-provider.h>
 
-#include <loongson1.h>
 #include "clk.h"
 
-#define OSC		(24 * 1000000)
+#include <dt-bindings/clock/ls1c-clock.h>
+
+#define LS1C_CLK_COUNT	6
+
 #define DIV_APB		1
+
+/* PLL/SDRAM Frequency configuration register Bits */
+#define PLL_VALID			BIT(31)
+#define FRAC_N				GENMASK(23, 16)
+#define RST_TIME			GENMASK(3, 2)
+#define SDRAM_DIV			GENMASK(1, 0)
+
+/* CPU/CAMERA/DC Frequency configuration register Bits */
+#define DIV_DC_EN			BIT(31)
+#define DIV_DC				GENMASK(30, 24)
+#define DIV_CAM_EN			BIT(23)
+#define DIV_CAM				GENMASK(22, 16)
+#define DIV_CPU_EN			BIT(15)
+#define DIV_CPU				GENMASK(14, 8)
+#define DIV_DC_SEL_EN			BIT(5)
+#define DIV_DC_SEL			BIT(4)
+#define DIV_CAM_SEL_EN			BIT(3)
+#define DIV_CAM_SEL			BIT(2)
+#define DIV_CPU_SEL_EN			BIT(1)
+#define DIV_CPU_SEL			BIT(0)
+
+#define DIV_DC_SHIFT			24
+#define DIV_CAM_SHIFT			16
+#define DIV_CPU_SHIFT			8
+#define DIV_DDR_SHIFT			0
+
+#define DIV_DC_WIDTH			7
+#define DIV_CAM_WIDTH			7
+#define DIV_CPU_WIDTH			7
+#define DIV_DDR_WIDTH			2
 
 static DEFINE_SPINLOCK(_lock);
 
@@ -23,9 +52,9 @@ static unsigned long ls1x_pll_recalc_rate(struct clk_hw *hw,
 {
 	u32 pll, rate;
 
-	pll = __raw_readl(LS1X_CLK_PLL_FREQ);
+	pll = __raw_readl(CLK_PLL_FREQ_ADDR);
 	rate = ((pll >> 8) & 0xff) + ((pll >> 16) & 0xff);
-	rate *= OSC;
+	rate *= parent_rate;
 	rate >>= 2;
 
 	return rate;
@@ -42,50 +71,95 @@ static const struct clk_div_table ahb_div_table[] = {
 	[3] = { .val = 3, .div = 3 },
 };
 
-void __init ls1x_clk_init(void)
+struct clk_hw_onecell_data __init *ls1c_clk_init_hw(const char *osc_name)
 {
 	struct clk_hw *hw;
+	struct clk_hw_onecell_data *onecell;
 
-	hw = clk_hw_register_fixed_rate(NULL, "osc_clk", NULL, 0, OSC);
-	clk_hw_register_clkdev(hw, "osc_clk", NULL);
+	onecell = kzalloc(sizeof(*onecell) +
+			  (LS1C_CLK_COUNT * sizeof(struct clk_hw *)),
+			  GFP_KERNEL);
 
-	/* clock derived from 24 MHz OSC clk */
-	hw = clk_hw_register_pll(NULL, "pll_clk", "osc_clk",
+	if (!onecell)
+		return NULL;
+
+	onecell->num = LS1C_CLK_COUNT;
+
+	/* clock derived from OSC clk */
+	hw = clk_hw_register_pll(NULL, "pll_clk", osc_name,
 				&ls1x_pll_clk_ops, 0);
-	clk_hw_register_clkdev(hw, "pll_clk", NULL);
+	if (!hw)
+		goto err;
+	onecell->hws[LS1C_CLK_PLL] = hw;
 
-	hw = clk_hw_register_divider(NULL, "cpu_clk_div", "pll_clk",
-				   CLK_GET_RATE_NOCACHE, LS1X_CLK_PLL_DIV,
+	hw = clk_hw_register_divider(NULL, "cpu_clk", "pll_clk",
+				   CLK_GET_RATE_NOCACHE, CLK_PLL_DIV_ADDR,
 				   DIV_CPU_SHIFT, DIV_CPU_WIDTH,
 				   CLK_DIVIDER_ONE_BASED |
 				   CLK_DIVIDER_ROUND_CLOSEST, &_lock);
-	clk_hw_register_clkdev(hw, "cpu_clk_div", NULL);
-	hw = clk_hw_register_fixed_factor(NULL, "cpu_clk", "cpu_clk_div",
-					0, 1, 1);
-	clk_hw_register_clkdev(hw, "cpu_clk", NULL);
+	if (!hw)
+		goto err;
+	onecell->hws[LS1C_CLK_CPU] = hw;
 
-	hw = clk_hw_register_divider(NULL, "dc_clk_div", "pll_clk",
-				   0, LS1X_CLK_PLL_DIV, DIV_DC_SHIFT,
+
+	hw = clk_hw_register_divider(NULL, "dc_clk", "pll_clk",
+				   0, CLK_PLL_DIV_ADDR, DIV_DC_SHIFT,
 				   DIV_DC_WIDTH, CLK_DIVIDER_ONE_BASED, &_lock);
-	clk_hw_register_clkdev(hw, "dc_clk_div", NULL);
-	hw = clk_hw_register_fixed_factor(NULL, "dc_clk", "dc_clk_div",
-					0, 1, 1);
-	clk_hw_register_clkdev(hw, "dc_clk", NULL);
+	if (!hw)
+		goto err;
+	onecell->hws[LS1C_CLK_DC] = hw;
 
-	hw = clk_hw_register_divider_table(NULL, "ahb_clk_div", "cpu_clk_div",
-				0, LS1X_CLK_PLL_FREQ, DIV_DDR_SHIFT,
+	hw = clk_hw_register_divider_table(NULL, "ddr_clk", "cpu_clk",
+				0, CLK_PLL_FREQ_ADDR, DIV_DDR_SHIFT,
 				DIV_DDR_WIDTH, CLK_DIVIDER_ALLOW_ZERO,
 				ahb_div_table, &_lock);
-	clk_hw_register_clkdev(hw, "ahb_clk_div", NULL);
-	hw = clk_hw_register_fixed_factor(NULL, "ahb_clk", "ahb_clk_div",
+	if (!hw)
+		goto err;
+	onecell->hws[LS1C_CLK_DDR] = hw;
+
+
+	hw = clk_hw_register_fixed_factor(NULL, "ahb_clk", "ddr_clk",
 					0, 1, 1);
+	if (!hw)
+		goto err;
+	onecell->hws[LS1C_CLK_AHB] = hw;
+
+
+	hw = clk_hw_register_fixed_factor(NULL, "apb_clk", "ahb_clk", 0, 1,
+					DIV_APB);
+	if (!hw)
+		goto err;
+	onecell->hws[LS1C_CLK_APB] = hw;
+
+	return onecell;
+
+err:
+	kfree(onecell);
+	return NULL;
+}
+
+void __init ls1c_register_clkdev(struct clk_hw_onecell_data *onecell)
+{
+	struct clk_hw *hw;
+
+	hw = onecell->hws[LS1C_CLK_PLL];
+	clk_hw_register_clkdev(hw, "pll_clk", NULL);
+
+	hw = onecell->hws[LS1C_CLK_CPU];
+	clk_hw_register_clkdev(hw, "cpu_clk", NULL);
+
+	hw = onecell->hws[LS1C_CLK_DC];
+	clk_hw_register_clkdev(hw, "dc_clk", NULL);
+
+	hw = onecell->hws[LS1C_CLK_DDR];
+	clk_hw_register_clkdev(hw, "ddr_clk", NULL);
+
+	hw = onecell->hws[LS1C_CLK_AHB];
 	clk_hw_register_clkdev(hw, "ahb_clk", NULL);
 	clk_hw_register_clkdev(hw, "ls1x-dma", NULL);
 	clk_hw_register_clkdev(hw, "stmmaceth", NULL);
 
-	/* clock derived from AHB clk */
-	hw = clk_hw_register_fixed_factor(NULL, "apb_clk", "ahb_clk", 0, 1,
-					DIV_APB);
+	hw = onecell->hws[LS1C_CLK_APB];
 	clk_hw_register_clkdev(hw, "apb_clk", NULL);
 	clk_hw_register_clkdev(hw, "ls1x-ac97", NULL);
 	clk_hw_register_clkdev(hw, "ls1x-i2c", NULL);

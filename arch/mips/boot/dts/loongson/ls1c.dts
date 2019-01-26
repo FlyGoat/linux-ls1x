@@ -1,10 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0
 /dts-v1/;
+#include <dt-bindings/clock/ls1c-clock.h>
+
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
 	compatible = "openloongson,smatloongsonv3", "loongson,ls1c300b";
+
+	chosen {
+		stdout-path = "uart2:115200n8";
+	};
+
+	aliases {
+		uart2 = &uart2;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -12,10 +22,18 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "loongson,gs232";
 			reg = <0>;
+			compatible = "loongson,gs232";
+			clocks = <&clk_ls1c LS1C_CLK_CPU>;
 		};
 	};
+
+	osc24M: osc24M_clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <24000000>;
+			clock-output-names = "osc24M";
+		};
 
 	cpu_intc: interrupt-controller {
 		#address-cells = <0>;
@@ -38,7 +56,7 @@
 		};
 
 		intc: interrupt-controller@1fd01040 {
-			compatible = "loongson,ls1c-intc";
+			compatible = "loongson,ls1x-intc";
 			reg = <0x1fd01040 0x78>;
 
 			interrupt-controller;
@@ -47,6 +65,40 @@
 			interrupt-parent = <&cpu_intc>;
 			interrupts = <2>, <3>, <4>, <5>, <6>;
 		};
+
+		clk_ls1c: clock {
+			compatible = "loongson,ls1c-clk";
+			reg = <0x1fd01040 0x78>;
+
+			#clock-cells = <1>;
+			clocks = <&osc24M>;
+			clock-output-names = "pll_clk", "cpu_clk", "dc_clk", "ddr_clk", "ahb_clk", "apb_clk";
+		};
+
+		uart2: uart@1fe48000 {
+			compatible = "ns16550a";
+			reg = <0x1fe48000 0x4000>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <5>;
+			clocks = <&clk_ls1c LS1C_CLK_APB>;
+		};
+
+		ehci0: usb@1fe20000 {
+			compatible = "generic-ehci";
+	   		reg = <0x1fe20000 0x100>;
+			interrupt-parent = <&intc>;
+	   		interrupts = <32>;
+	   		clocks = <&clk_ls1c LS1C_CLK_AHB>;
+  			};
+
+		ohci0: usb@1fe28000 {
+			compatible = "allwinner,sun4i-a10-ohci", "generic-ohci";
+			reg = <0x1fe28000 0x100>;
+			interrupt-parent = <&intc>;
+			interrupts = <33>;
+			clocks = <&clk_ls1c LS1C_CLK_AHB>;
+			};
 
 	};
 };

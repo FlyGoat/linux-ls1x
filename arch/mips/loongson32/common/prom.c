@@ -11,6 +11,7 @@
 
 #include <linux/serial_reg.h>
 #include <asm/bootinfo.h>
+#include <linux/delay.h>
 
 #include <loongson1.h>
 #include <prom.h>
@@ -77,6 +78,13 @@ void __init prom_init(void)
 		uart_base = ioremap_nocache(LS1X_UART0_BASE, 0x0f);
 	#endif
 	setup_8250_early_printk_port((unsigned long)uart_base, 0, 0);
+	__raw_writel(__raw_readl(LS1X_MUX_CTRL0) | USBHOST_SHUT, LS1X_MUX_CTRL0);
+	mdelay(60);
+	__raw_writel(__raw_readl(LS1X_MUX_CTRL0) & (~USBHOST_SHUT), LS1X_MUX_CTRL0);
+	__raw_writel(__raw_readl(LS1X_MUX_CTRL1) & (~USBHOST_RSTN), LS1X_MUX_CTRL1);
+	mdelay(200);
+	/* reset stop */
+	__raw_writel(__raw_readl(LS1X_MUX_CTRL1) | USBHOST_RSTN, LS1X_MUX_CTRL1);
 }
 
 void __init prom_free_prom_memory(void)

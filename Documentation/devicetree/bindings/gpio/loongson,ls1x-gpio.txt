@@ -1,0 +1,16 @@
+Loongson-1 GPIO controller
+
+Required properties:
+- compatible: "loongson,ls1b-gpio" or "loongson,ls1c-gpio"
+- reg: Physical base address and length of the controller's registers.
+- gpio-controller: Marks the device node as a GPIO controller.
+- #gpio-cells: Should be <1>.
+
+Example:
+
+	GPIO: gpio@1fd010c0 {
+		#gpio-cells = <2>;
+		compatible = "loongson,ls1b-gpio";
+		reg = <0x1fd010c0 0x40>;
+		gpio-controller;
+	}
