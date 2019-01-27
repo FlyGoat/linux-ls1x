@@ -247,8 +247,6 @@ void __init plat_time_init(void)
 #else
 	/* setup mips r4k timer */
 	//clk = clk_get(NULL, "cpu_clk");
-	if (IS_ERR(clk))
-		panic("unable to get cpu clock, err=%ld", PTR_ERR(clk));
 	
 	pr_info("CPU Clock: %lu\n",clk_get_rate(clk));
 

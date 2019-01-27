@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /dts-v1/;
 #include <dt-bindings/clock/ls1c-clock.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 
 
 / {
@@ -50,27 +51,69 @@
 		compatible = "simple-bus";
 		ranges;
 
-		memory@0 {
-			device_type = "memory";
-			reg = <0x00000000 0x10000000>;
-		};
 
-		intc: interrupt-controller@1fd01040 {
+		platintc0: interrupt-controller@1fd01040 {
 			compatible = "loongson,ls1x-intc";
-			reg = <0x1fd01040 0x78>;
+			reg = <0x1fd01040 0x18>;
 
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 
 			interrupt-parent = <&cpu_intc>;
-			interrupts = <2>, <3>, <4>, <5>, <6>;
+			interrupts = <2>;
 		};
 
-		clk_ls1c: clock {
-			compatible = "loongson,ls1c-clk";
-			reg = <0x1fd01040 0x78>;
+		platintc1: interrupt-controller@1fd01058 {
+			compatible = "loongson,ls1x-intc";
+			reg = <0x1fd01058 0x18>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <3>;
+		};
+
+		platintc2: interrupt-controller@1fd01070 {
+			compatible = "loongson,ls1x-intc";
+			reg = <0x1fd01070 0x18>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <4>;
+		};
+
+		platintc3: interrupt-controller@1fd01088 {
+			compatible = "loongson,ls1x-intc";
+			reg = <0x1fd01088 0x18>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <5>;
+		};
+
+		platintc4: interrupt-controller@1fd010a0 {
+			compatible = "loongson,ls1x-intc";
+			reg = <0x1fd010a0 0x18>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <6>;
+		};
+
+
+		clk_ls1c: clock@1fe78030 {
+			compatible = "loongson,ls1c-clock";
+			reg = <0x1fe78030 0x78>;
 
 			#clock-cells = <1>;
+			clock-names = "osc_clk";
 			clocks = <&osc24M>;
 			clock-output-names = "pll_clk", "cpu_clk", "dc_clk", "ddr_clk", "ahb_clk", "apb_clk";
 		};
@@ -79,24 +122,24 @@
 			compatible = "ns16550a";
 			reg = <0x1fe48000 0x4000>;
 
-			interrupt-parent = <&intc>;
-			interrupts = <5>;
+			interrupt-parent = <&platintc0>;
+			interrupts = <5 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clk_ls1c LS1C_CLK_APB>;
 		};
 
 		ehci0: usb@1fe20000 {
 			compatible = "generic-ehci";
 	   		reg = <0x1fe20000 0x100>;
-			interrupt-parent = <&intc>;
-	   		interrupts = <32>;
+			interrupt-parent = <&platintc1>;
+	   		interrupts = <0 IRQ_TYPE_LEVEL_HIGH>;
 	   		clocks = <&clk_ls1c LS1C_CLK_AHB>;
   			};
 
 		ohci0: usb@1fe28000 {
 			compatible = "allwinner,sun4i-a10-ohci", "generic-ohci";
 			reg = <0x1fe28000 0x100>;
-			interrupt-parent = <&intc>;
-			interrupts = <33>;
+			interrupt-parent = <&platintc1>;
+			interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clk_ls1c LS1C_CLK_AHB>;
 			};
 

@@ -55,26 +55,6 @@ struct clk_hw *__init clk_hw_register_pll(struct device *dev,
 }
 
 
-static void __init ls1c_clk_of_setup(struct device_node *np)
-{
-	struct clk_hw_onecell_data *onecell;
-	int err;
-	const char *parent = of_clk_get_parent_name(np, 0);
-
-	clk_base = of_iomap(np, 0);
-
-	onecell = ls1c_clk_init_hw(parent);
-	if (!onecell)
-		pr_err("ls1c-clk: unable to register clk_hw");
-
-	err = of_clk_add_hw_provider(np, of_clk_hw_onecell_get, onecell);
-	if (err)
-		pr_err("ls1c-clk: failed to add DT provider: %d\n", err);
-
-	pr_info("ls1c-clk: driver registered");
-}
-CLK_OF_DECLARE(clk_ls1c, "loongson,ls1c-clock", ls1c_clk_of_setup);
-
 static void __init ls1b_clk_of_setup(struct device_node *np)
 {
 	struct clk_hw_onecell_data *onecell;
